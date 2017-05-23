@@ -1,0 +1,47 @@
+
+***********************************************************************************************************************************************************
+*MAY 20_ tommy il bello, tommyTomac
+
+equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
+SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
+         if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
+                 SalvageValueStorage(s,y,r) =e= 0;
+         elseif ( (y+OperationalLifeStorage(r,s) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(r,s)=0 ),
+                 SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1- smax(yy, YearVal(yy)) -y+1 ) / OperationalLifeStorage(r,s);
+         else ( (y+OperationalLifeStorage(r,s) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(r,s)>0 ),
+               SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(r,s)) ^(smax(yy, YearVal(yy))-y+1) -1 )/( ( 1+DiscountRateStorage(r,s) )^( OperationalLifeStorage(r,s) )-1));
+         );
+		 
+
+equation SI9_SalvageValueStorageDiscountedToStartYear (STORAGE,YEAR,REGION);
+SI9_SalvageValueStorageDiscountedToStartYear(s,y,r)..
+		DiscountedSalvageValueStorage(s,y,r) =e= SalvageValueStorage(s,y,r)/ ((1+ DiscountRateStorage(r,s))^ (smax(yy,YearVal(yy)) -smin(yy,YearVal(yy)) +1));
+		
+equation SI10_TotalDiscountedCostByStorage(STORAGE,YEAR,REGION);
+SI10_TotalDiscountedCostByStorage(s,y,r)..
+		TotalDiscountedStorageCost(s,y,r) =e= DiscountedCapitalValueStorage(s,y,r) - DiscountedSalvageValueStorage(s,y,r);
+
+***********************************************************************************************************************************************************
+*MAY 23_ tommy il bello, tommyTomac
+
+
+*aggiunto dipendenza da l in capacity factor
+equation CBa4_Constraint_Capacity(YEAR,TIMESLICE,TECHNOLOGY,REGION);
+CBa4_Constraint_Capacity(y,l,t,r)$(TechWithCapacityNeededToMeetPeakTS(r,t) <> 0)..
+    RateOfTotalActivity(y,l,t,r) =l=
+        TotalCapacityAnnual(y,t,r) * CapacityFactor(r,l,t,y)*CapacityToActivityUnit(r,t);
+
+
+* All other technologies have a capacity great enough to at least meet the annual average.
+
+* 1)aggiunto dipendenza da l di capacity factor. 2) sommatoria alla dx della disequazione. 3)aggiunto yearsplit alla dx di disequazione.
+* REFERENCE: modelling elemnts.... WELSCH
+equation CBb1_PlannedMaintenance(YEAR,TECHNOLOGY,REGION);
+CBb1_PlannedMaintenance(y,t,r)..
+    sum(l, RateOfTotalActivity(y,l,t,r)*YearSplit(l,y)) =l=
+        sum (l, YearSplit(l,y)*TotalCapacityAnnual(y,t,r)*CapacityFactor(r,l,t,y)* AvailabilityFactor(r,t,y)*CapacityToActivityUnit(r,t));
+	
+
+
+
+	
