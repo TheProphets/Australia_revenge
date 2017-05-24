@@ -54,6 +54,36 @@ S9_10_StorageLevelSeasonStart(s,y,ls,r)..
          StorageLevelSeasonStart(s,y,ls,r)=StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
       );
 
+******************************************* MAY24: tommy il bello, tommyTomac
+equation S11_and_S12_StorageLevelDayTypeStart(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S11_and_S12_StorageLevelDayTypeStart..
+	if( ld=smin(ldld, DayTypeVal(ldld)) ,
+		StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelSeasonStart (s,y,ls,r);
+	else 
+			StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelDayTypeStart(s,y,ls,ld-1,r) + sum( lh, NetChargeWithinDay(s,y,ls,ld-1,lh,r)*DaysInDayTyper(y,ls,ld-1));
+			);
+			
+equation S13_and_S14_and_S15_StorageLevelDayTypeFinish(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S13_and_S14_and_S15_StorageLevelDayTypeFinish(s,y,ls,ld,r)..
+	if( ls=smax(lsls, SeasonVal(lsls)) and ld= smax(ldld, DayTypeVal(ldld)),
+		StorageLevelDayTypeFinish(s,y,ls,ld,r)=e= StorageLevelYearFinish(s,y,r);
+	elseif	ld= smax(ldld, DayTypeVal(ldld)),
+		StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelSeasonStart(s,y,ls+1,r);
+	else 
+		StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelDayTypeFinish(s,y,ls,ld+1,r) - sum( lh, NetChargeWithinDay(s,y,ls,ld+1.lh,r)*DaysInDayTyper(yearsplit,ls,ld+1) );
+		);
+
+**----CONSTRAINTS
+equation SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)..
+	( StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) >=0;
+	
+equation SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,r)..
+	StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageUpperLimit(s,y,r)<=0;
+
+ *************************************** *************************************** ***************************************
+
 equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
