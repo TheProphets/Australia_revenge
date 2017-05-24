@@ -2,8 +2,12 @@
 ***********************************************************************************************************************************************************
 *MAY 20_ tommy il bello, tommyTomac
 
+**** STORAGE *****
+NB: TUTTE LE EQUAZIONI DELLO STORAGE SONO STATE SOSTITUITE CON ALTRE PIù APPROPRIATE CHE TENGONO CONTO DELLA NUOVA SUDDIVISIONE DELLE TIMESLICE ***
 
+Di seguito le nuove equazioni
 
+equatio
 equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
@@ -48,8 +52,8 @@ CBb1_PlannedMaintenance(y,t,r)..
 *** USE***
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa5_RateOfFuelUse2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
-EBa5_RateOfFuelUse2(y,l,f,t,r)$(InputActivityRatio[y,t,f,m,r] <>0)..
-    RateOfUseByTechnology(y,l,t,f,r) =e= sum(m, RateOfUseByTechnologyByMode(y,l,t,m,f,r));
+EBa5_RateOfFuelUse2(y,l,f,t,r)..
+    RateOfUseByTechnology(y,l,t,f,r) =e= sum(m$(InputActivityRatio[y,t,f,m,r] <>0), RateOfUseByTechnologyByMode(y,l,t,m,f,r));
 
 ** MODIFICA: Aggiunta condizione su InputActivityRatio **
 equation EBa4_RateOfFuelUse1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
@@ -59,8 +63,8 @@ EBa4_RateOfFuelUse1(y,l,f,t,m,r)$(InputActivityRatio[y,t,f,m,r] <>0)..
 ***PRODUCTION***
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa2_RateOfFuelProduction2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
-EBa2_RateOfFuelProduction2(y,l,f,t,r)$(OutputActivityRatio[y,t,f,m,r] <>0)..
-    RateOfProductionByTechnology(y,l,t,f,r)=e= sum(m, RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
+EBa2_RateOfFuelProduction2(y,l,f,t,r)..
+    RateOfProductionByTechnology(y,l,t,f,r)=e= sum(m$(OutputActivityRatio[y,t,f,m,r] <>0), RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
 
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa1_RateOfFuelProduction1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
