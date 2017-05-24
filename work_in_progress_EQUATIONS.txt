@@ -7,7 +7,27 @@ NB: TUTTE LE EQUAZIONI DELLO STORAGE SONO STATE SOSTITUITE CON ALTRE PIù APPROP
 
 Di seguito le nuove equazioni
 
-equatio
+*** RATEOFSTORAGECHARGE***
+equation S1_RateOfStorageCharge(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+S1_RateOfStorageCharge(s,y,ls,ld,lh,r)..
+    RateOfStorageCharge(s,y,ls,ld,lh,r) =e= sum((t,m,l)$(TechnologyToStorage(r,t,s,m)>0),RateOfActivity(y,l,t,m,r)*TechnologyToStorage(t,m,s,r)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l);
+
+***RATEOFSTORAGEDISCHARGE***
+equation S2_RateOfStorageDischarge(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMBRACKET,REGION);
+S2_RateOfStorageDischarge(s,y,ls,ld,lh,r)..
+    RateOfStorageDischarge(s,y,ls,ld,lh,r) =e= sum((t,m,l)$(TechnologyFromStorage(r,t,s,m)>0),RateOfActivity(y,l,t,m,r)*TechnologyFromStorage(r,t,s,m)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l);
+
+**NETCHARGEWITHINYEAR**
+equation S3_NetChargeWithinYear(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+S3_NetChargeWithinYear(s,y,ls,ld,lh,r)..
+    NetChargeWithinYear(s,y,ls,ld,lh,r) =e= sum(l$(Conversionls(ls,l)>0 and Conversionld(ld,l)>0 and Conversionlh(ld,l)>0),(RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*YearSplit(y,l)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l);
+
+**NETCHARGEWITHINDAY**
+equation S4_NetChargeWithinDay(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+S4_NetChargeWithinDay(s,y,ls,ld,lh,r)..
+    NetChargeWithinDay(s,y,ls,ld,lh,r) =e= (RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*DaySplit(y,lh);
+
+
 equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
@@ -75,6 +95,11 @@ EBa1_RateOfFuelProduction1(y,l,f,t,m,r)$(OutputActivityRatio[y,t,f,m,r] <>0)..
 ** MODIFICA: Il TotalDiscountedCost non dipende più dalla tec, è stato sommato da un'altra parte per tener conto dello storage***
 equation Acc3_ModelPeriodCostByRegion(REGION);
 Acc3_ModelPeriodCostByRegion(r).. ModelPeriodCostByRegion(r) =e= sum((y), TotalDiscountedCost(y,r));
+
+** Aggiunte equazioni che definiscono inizioo e fine dell'orizzonte previsionale***
+*** START & FINISH ***
+Yearmin = smin(y, YearVal(y));
+Yearmax = smax(y, YearVal(y));
 
 
 
