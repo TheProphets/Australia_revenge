@@ -27,6 +27,14 @@ equation S4_NetChargeWithinDay(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGI
 S4_NetChargeWithinDay(s,y,ls,ld,lh,r)..
     NetChargeWithinDay(s,y,ls,ld,lh,r) =e= (RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*DaySplit(y,lh);
 
+** STORAGE LEVEL AT THE YEAR BEGINNING ***
+equation S5_6_StorageLevelYearStart(STORAGE,YEAR,REGION);
+S5_StorageLevelYearStart(s,y,r)..
+    if (y=Yearmin,
+         StorageLevelYearStart(s,y,r)=StorageLevelStart(s,r);
+    else
+         StorageLevelYearStart(s,y,r)=StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinDay(s,y-1,ls,ld,lh,r));
+        );
 
 equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
