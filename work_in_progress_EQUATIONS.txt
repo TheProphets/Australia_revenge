@@ -45,6 +45,15 @@ S5_StorageLevelYearFinish(s,y,r)..
          StorageLevelYearFinish(s,y,r)=StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
         );
 
+** STORAGE LEVEL SEASON START**
+equation S9_10_StorageLevelSeasonStart(STORAGE,YEAR,SEASON,REGION);
+S9_10_StorageLevelSeasonStart(s,y,ls,r)..
+    if(ls=smin(lsls,SeasonVal(lsls)),
+         StorageLevelSeasonStart(s,y,ls,r)=StorageLevelYearStart(s,y,r);
+    else
+         StorageLevelSeasonStart(s,y,ls,r)=StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
+      );
+
 equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
