@@ -2,6 +2,8 @@
 ***********************************************************************************************************************************************************
 *MAY 20_ tommy il bello, tommyTomac
 
+
+
 equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
@@ -24,8 +26,9 @@ SI10_TotalDiscountedCostByStorage(s,y,r)..
 ***********************************************************************************************************************************************************
 *MAY 23_ tommy il bello, tommyTomac
 
+*******    CAPACITY ADEQUACY ***
 
-*aggiunto dipendenza da l in capacity factor
+** Modifica: Adesso Capacity factor dipende da Timeslice l *****
 equation CBa4_Constraint_Capacity(YEAR,TIMESLICE,TECHNOLOGY,REGION);
 CBa4_Constraint_Capacity(y,l,t,r)$(TechWithCapacityNeededToMeetPeakTS(r,t) <> 0)..
     RateOfTotalActivity(y,l,t,r) =l=
@@ -33,14 +36,41 @@ CBa4_Constraint_Capacity(y,l,t,r)$(TechWithCapacityNeededToMeetPeakTS(r,t) <> 0)
 
 
 * All other technologies have a capacity great enough to at least meet the annual average.
-
-* 1)aggiunto dipendenza da l di capacity factor. 2) sommatoria alla dx della disequazione. 3)aggiunto yearsplit alla dx di disequazione.
-* REFERENCE: modelling elemnts.... WELSCH
+** MODIFICA: Adesso CapacityFactor dipede da l, dunque è stata aggiunta sommatoria a destra della disequazione e la moltiplicazione per Year split, **
+** Reference: Modeling elements of smart grids - Enhancing the OSeMOSYS - M. Welsch et al. **
 equation CBb1_PlannedMaintenance(YEAR,TECHNOLOGY,REGION);
 CBb1_PlannedMaintenance(y,t,r)..
     sum(l, RateOfTotalActivity(y,l,t,r)*YearSplit(l,y)) =l=
         sum (l, YearSplit(l,y)*TotalCapacityAnnual(y,t,r)*CapacityFactor(r,l,t,y)* AvailabilityFactor(r,t,y)*CapacityToActivityUnit(r,t));
 	
+*********   ENERGY BALANCE *****
+
+*** USE***
+** MODIFICA: Aggiunta condizione su OutputActivityRatio **
+equation EBa5_RateOfFuelUse2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
+EBa5_RateOfFuelUse2(y,l,f,t,r)$(InputActivityRatio[y,t,f,m,r] <>0)..
+    RateOfUseByTechnology(y,l,t,f,r) =e= sum(m, RateOfUseByTechnologyByMode(y,l,t,m,f,r));
+
+** MODIFICA: Aggiunta condizione su InputActivityRatio **
+equation EBa4_RateOfFuelUse1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
+EBa4_RateOfFuelUse1(y,l,f,t,m,r)$(InputActivityRatio[y,t,f,m,r] <>0)..
+    RateOfUseByTechnologyByMode(y,l,t,m,f,r) =e= RateOfActivity(y,l,t,m,r)*InputActivityRatio(r,t,f,m,y);
+
+***PRODUCTION***
+** MODIFICA: Aggiunta condizione su OutputActivityRatio **
+equation EBa2_RateOfFuelProduction2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
+EBa2_RateOfFuelProduction2(y,l,f,t,r)$(OutputActivityRatio[y,t,f,m,r] <>0)..
+    RateOfProductionByTechnology(y,l,t,f,r)=e= sum(m, RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
+
+** MODIFICA: Aggiunta condizione su OutputActivityRatio **
+equation EBa1_RateOfFuelProduction1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
+EBa1_RateOfFuelProduction1(y,l,f,t,m,r)$(OutputActivityRatio[y,t,f,m,r] <>0)..
+    RateOfProductionByTechnologyByMode(y,l,t,m,f,r) =e= RateOfActivity(y,l,t,m,r)*OutputActivityRatio(r,t,f,m,y);
+	
+**********   OTHER  ACCOUNTING EQ *****
+** MODIFICA: Il TotalDiscountedCost non dipende più dalla tec, è stato sommato da un'altra parte per tener conto dello storage***
+equation Acc3_ModelPeriodCostByRegion(REGION);
+Acc3_ModelPeriodCostByRegion(r).. ModelPeriodCostByRegion(r) =e= sum((y), TotalDiscountedCost(y,r));
 
 
 
