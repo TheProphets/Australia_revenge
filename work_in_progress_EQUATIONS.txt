@@ -213,7 +213,7 @@ Yearmin = smin(y, YearVal(y));
 Yearmax = smax(y, YearVal(y));
 
 **** May 25 Tommy il bello ****
-*** MODIFICHE A TOTAL DISCONTED COST***
+*** TOTAL DISCONTED COST***
 *** DISTINZIONE TRA TOTAL_DISCOUNTED_COST_BY_TECHNOLOGY E TOTAL_DISCOUNTED_COST (takes into account also the cost of storage)***
 equation TDC1_TotalDiscountedCostByTechnology(YEAR,TECHNOLOGY,REGION);
 TDC1_TotalDiscountedCostByTechnology(y,t,r)..
@@ -226,6 +226,28 @@ equation TDC2_TotalDiscountedCost(YEAR,REGION);
 TDC2_TotalDiscountedCost(y,r)..
 	TotalDiscountedCost(y,r) =e= sum(t,TotalDiscountedCostByTechnology(y,t,r))+sum(s,TotalDiscountedStorageCost(s,y,r));
 
+**** CAPACITY CONSTRAINTS***
+*** Useless condition on the equation removed **
+equation TCC1_TotalAnnualMaxCapacityConstraint(YEAR,TECHNOLOGY,REGION);
+TCC1_TotalAnnualMaxCapacityConstraint(y,t,r)..
+    TotalCapacityAnnual(y,t,r) =l= TotalAnnualMaxCapacity(r,t,y);
 
+*** Useless condition on the equation removed **
+equation NCC1_TotalAnnualMaxNewCapacityConstraint(YEAR,TECHNOLOGY,REGION);
+NCC1_TotalAnnualMaxNewCapacityConstraint(y,t,r)..
+    NewCapacity(y,t,r) =l= TotalAnnualMaxCapacityInvestment(r,t,y);
 
-	
+**ACTIVITY CONSTRAINTS**
+*** Useless condition on the equation removed **
+equation AAC2_TotalAnnualTechnologyActivityUpperLimit(YEAR,TECHNOLOGY,REGION);
+AAC2_TotalAnnualTechnologyActivityUpperLimit(y,t,r)..
+    TotalTechnologyAnnualActivity(y,t,r) =l= TotalTechnologyAnnualActivityUpperLimit(r,t,y);
+
+**Corrected Horizen with Horizon and Useless condition on the equation removed**
+equation TAC1_TotalModelHorizonTechnologyActivity(TECHNOLOGY,REGION);
+TAC1_TotalModelHorizenTechnologyActivity(t,r)..
+    TotalTechnologyModelPeriodActivity(t,r) =e= sum(y, TotalTechnologyAnnualActivity(y,t,r));
+
+equation TAC2_TotalModelHorizonTechnologyActivityUpperLimit(YEAR,TECHNOLOGY,REGION);
+TAC2_TotalModelHorizenTechnologyActivityUpperLimit(y,t,r)..
+    TotalTechnologyModelPeriodActivity(t,r) =l= TotalTechnologyModelPeriodActivityUpperLimit(r,t);
