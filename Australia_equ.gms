@@ -9,7 +9,6 @@
 *
 * =======================================================================
 
-
 *------------------------------------------------------------------------
 * Objective function
 *------------------------------------------------------------------------
@@ -384,57 +383,57 @@ S4_NetChargeWithinDay(s,y,ls,ld,lh,r)..
     NetChargeWithinDay(s,y,ls,ld,lh,r) =e= (RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*DaySplit(y,lh);
 
 equation S5_StorageLevelYearStart1(STORAGE,YEAR,REGION);
-S5_StorageLevelYearStart1(s,y,r)..
+S5_StorageLevelYearStart1(s,y,r)$(YearVal(y)=Yearmin)..
 
-         StorageLevelYearStart(s,y,r)$(YearVal(y)=Yearmin) =e= StorageLevelStart(s,r);
+         StorageLevelYearStart(s,y,r) =e= StorageLevelStart(s,r);
 
 equation S6_StorageLevelYearStart2(STORAGE,YEAR,REGION);
-S6_StorageLevelYearStart2(s,y,r)..
-         StorageLevelYearStart(s,y,r)$(YearVal(y)<>Yearmin) =e= StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y-1,ls,ld,lh,r));
+S6_StorageLevelYearStart2(s,y,r)$(YearVal(y)<>Yearmin)..
+         StorageLevelYearStart(s,y,r) =e= StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y-1,ls,ld,lh,r));
 
 
 equation S7_StorageLevelYearFinish1(STORAGE,YEAR,REGION);
-S7_StorageLevelYearFinish1(s,y,r)..
+S7_StorageLevelYearFinish1(s,y,r)$(YearVal(y)<Yearmax)..
 
-         StorageLevelYearFinish(s,y,r)$(YearVal(y)<Yearmax) =e= StorageLevelYearStart(s,y+1,r);
+         StorageLevelYearFinish(s,y,r) =e= StorageLevelYearStart(s,y+1,r);
 
 equation S8_StorageLevelYearFinish2(STORAGE,YEAR,REGION);
-S8_StorageLevelYearFinish2(s,y,r)..
-         StorageLevelYearFinish(s,y,r)$(YearVal(y)=Yearmax) =e= StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
+S8_StorageLevelYearFinish2(s,y,r)$(YearVal(y)=Yearmax)..
+         StorageLevelYearFinish(s,y,r) =e= StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
 
 equation S9_StorageLevelSeasonStart1(STORAGE,YEAR,SEASON,REGION);
-S9_StorageLevelSeasonStart1(s,y,ls,r)..
+S9_StorageLevelSeasonStart1(s,y,ls,r)$(ls.val=smin(lsls,SeasonVal(lsls)))..
 
-         StorageLevelSeasonStart(s,y,ls,r)$(ls.val=smin(lsls,SeasonVal(lsls))) =e= StorageLevelYearStart(s,y,r);
+         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelYearStart(s,y,r);
 
 equation S10_StorageLevelSeasonStart2(STORAGE,YEAR,SEASON,REGION);
-S10_StorageLevelSeasonStart2(s,y,ls,r)..
+S10_StorageLevelSeasonStart2(s,y,ls,r)$(ls.val<>smin(lsls,SeasonVal(lsls)))..
 
-         StorageLevelSeasonStart(s,y,ls,r)$(ls.val<>smin(lsls,SeasonVal(lsls))) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
+         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
 
 
 equation S11_StorageLevelDayTypeStart1(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S11_StorageLevelDayTypeStart1(s,y,ls,ld,r)..
-                StorageLevelDayTypeStart(s,y,ls,ld,r)$(ld.val=smin(ldld, DayTypeVal(ldld))) =e= StorageLevelSeasonStart (s,y,ls,r);
+S11_StorageLevelDayTypeStart1(s,y,ls,ld,r)$(ld.val=smin(ldld, DayTypeVal(ldld)))..
+                StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelSeasonStart (s,y,ls,r);
 
 equation S12_StorageLevelDayTypeStart2(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S12_StorageLevelDayTypeStart2(s,y,ls,ld,r)..
-                StorageLevelDayTypeStart(s,y,ls,ld,r)$(ld.val<>smin(ldld, DayTypeVal(ldld))) =e= StorageLevelSeasonStart (s,y,ls,r);
+S12_StorageLevelDayTypeStart2(s,y,ls,ld,r)$(ld.val<>smin(ldld, DayTypeVal(ldld)))..
+                StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelSeasonStart (s,y,ls,r);
 
 equation S13_StorageLevelDayTypeFinish1(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S13_StorageLevelDayTypeFinish1(s,y,ls,ld,r)..
+S13_StorageLevelDayTypeFinish1(s,y,ls,ld,r)$(ls.val=smax(lsls, SeasonVal(lsls)) and ld.val= smax(ldld, DayTypeVal(ldld)))..
 
-                StorageLevelDayTypeFinish(s,y,ls,ld,r)$(ls.val=smax(lsls, SeasonVal(lsls)) and ld.val= smax(ldld, DayTypeVal(ldld))) =e= StorageLevelYearFinish(s,y,r);
+                StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelYearFinish(s,y,r);
 
 equation S14_StorageLevelDayTypeFinish2(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S14_StorageLevelDayTypeFinish2(s,y,ls,ld,r)..
+S14_StorageLevelDayTypeFinish2(s,y,ls,ld,r)$(ld.val= smax(ldld, DayTypeVal(ldld)))..
 
-                StorageLevelDayTypeFinish(s,y,ls,ld,r)$(ld.val= smax(ldld, DayTypeVal(ldld))) =e= StorageLevelSeasonStart(s,y,ls+1,r);
+                StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelSeasonStart(s,y,ls+1,r);
 
 equation S15_StorageLevelDayTypeFinish3(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S15_StorageLevelDayTypeFinish3(s,y,ls,ld,r)..
+S15_StorageLevelDayTypeFinish3(s,y,ls,ld,r)$(ld.val<> smax(ldld, DayTypeVal(ldld)))..
 
-                StorageLevelDayTypeFinish(s,y,ls,ld,r)$(ld.val<> smax(ldld, DayTypeVal(ldld))) =e= StorageLevelDayTypeFinish(s,y,ls,ld+1,r) - sum( lh, NetChargeWithinDay(s,y,ls,ld+1,lh,r)*DaysInDayType(y,ls,ld+1) );
+                StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelDayTypeFinish(s,y,ls,ld+1,r) - sum( lh, NetChargeWithinDay(s,y,ls,ld+1,lh,r)*DaysInDayType(y,ls,ld+1) );
 
 
 **---- STORAGE CONSTRAINTS ----**
@@ -509,16 +508,16 @@ SI5_DiscountingCapitalInvestmentStorage(s,y,r)..
 
 
 equation SI6_SalvageValueStorageAtEndOfPeriod1 (STORAGE, YEAR, REGION);
-SI6_SalvageValueStorageAtEndOfPeriod1(s,y,r)..
-        SalvageValueStorage(s,y,r) $ ( (y.val+OperationalLifeStorage(s,r) -1) <= smax( yy, YearVal(yy)) ) =e= 0;
+SI6_SalvageValueStorageAtEndOfPeriod1(s,y,r)$( (y.val+OperationalLifeStorage(s,r) -1) <= smax( yy, YearVal(yy)) )..
+        SalvageValueStorage(s,y,r) =e= 0;
 
 equation SI7_SalvageValueStorageAtEndOfPeriod2 (STORAGE, YEAR, REGION);
-SI7_SalvageValueStorageAtEndOfPeriod2(s,y,r)..
-        SalvageValueStorage(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)=0 )=e= CapitalInvestmentStorage(s,y,r) * ( 1- smax(yy, YearVal(yy)) -y.val+1 ) / OperationalLifeStorage(s,r);
+SI7_SalvageValueStorageAtEndOfPeriod2(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)=0 )..
+        SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1- smax(yy, YearVal(yy)) -y.val+1 ) / OperationalLifeStorage(s,r);
 
 equation SI8_SalvageValueStorageAtEndOfPeriod3 (STORAGE, YEAR, REGION);
-SI8_SalvageValueStorageAtEndOfPeriod3(s,y,r)..
-        SalvageValueStorage(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)>0 ) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(s,r)) ** (smax(yy, YearVal(yy))-y.val+1) -1 )/( ( 1+DiscountRateStorage(s,r) )**( OperationalLifeStorage(s,r) )-1));
+SI8_SalvageValueStorageAtEndOfPeriod3(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)>0 )..
+        SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(s,r)) ** (smax(yy, YearVal(yy))-y.val+1) -1 )/( ( 1+DiscountRateStorage(s,r) )**( OperationalLifeStorage(s,r) )-1));
 
 
 
