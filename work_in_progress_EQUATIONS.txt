@@ -116,8 +116,29 @@ SC6_MaxDischargeConstraint(s,y,ls,ld,lh,r)..
 	RateOfStorageDischarge(s,y,ls,ld,lh,r)<=StorageMaxDischargeRate(s,r);
 	
 ***************************************** ************************************ ***************** ********************************
++++++++ STORAGE INVESTMENTS ++++++++
 
-equation SI6_SalvageValueStorageAtEndOfPeriod (STORAGE, YEAR, REGION);
+equation SI1_StorageUpperLimit(STORAGE,YEAR,REGION);
+SI1_StorageUpperLimit(s,y,r)..
+	StorageUpperLimit(s,y,r) =e= AccumulatedNewStorageCapacity(s,y,r) + ResidualStorageCapacity(s,y,r);
+
+equation SI2_StorageLowerLimit(STORAGE,YEAR,REGION);
+SI2_StorageLowerLimit(s,y,r)..
+	StorageLowerLimit(s,y,r) =e= MinStorageCharge(s,y,r)*StorageUpperLimit(s,y,r);
+
+equation SI3_TotalNewStorage(STORAGE,YEAR,REGION);
+SI3_TotalNewStorage(s,y,r)..
+	AccumulatedNewStorageCapacity(s,y,r) =e= sum(yy$(y-yy<OperationalLifeStorage(s,r) and y-yy>=0), NewStorageCapacity(s,yy,r));
+
+equation SI4_UndiscountedCapitalInvestmentStorage(STORAGE,YEAR,REGION);
+SI4_UndiscountedCapitalInvestmentStorage(s,y,r)..
+	CapitalInvestmentStorage(s,y,r) =e= CapitalCostStorage(s,y,r)*NewStorageCapacity(s,y,r);
+
+equation SI5_DiscountingCapitalInvestmentStorage(STORAGE,YEAR,REGION);
+SI5_DiscountingCapitalInvestmentStorage(s,y,r)..
+DiscountedCapitalInvestmentStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r)/((1+DiscountRateStorage(s,r))^(y-Yearmin));
+
+equation SI6_7_8_SalvageValueStorageAtEndOfPeriod(STORAGE, YEAR, REGION);
 SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
                  SalvageValueStorage(s,y,r) =e= 0;
@@ -126,7 +147,6 @@ SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
          else ( (y+OperationalLifeStorage(r,s) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(r,s)>0 ),
                SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(r,s)) ^(smax(yy, YearVal(yy))-y+1) -1 )/( ( 1+DiscountRateStorage(r,s) )^( OperationalLifeStorage(r,s) )-1));
          );
-		 
 
 equation SI9_SalvageValueStorageDiscountedToStartYear (STORAGE,YEAR,REGION);
 SI9_SalvageValueStorageDiscountedToStartYear(s,y,r)..
@@ -135,6 +155,8 @@ SI9_SalvageValueStorageDiscountedToStartYear(s,y,r)..
 equation SI10_TotalDiscountedCostByStorage(STORAGE,YEAR,REGION);
 SI10_TotalDiscountedCostByStorage(s,y,r)..
 		TotalDiscountedStorageCost(s,y,r) =e= DiscountedCapitalValueStorage(s,y,r) - DiscountedSalvageValueStorage(s,y,r);
+
+
 
 ***********************************************************************************************************************************************************
 *MAY 23_ tommy il bello, tommyTomac
