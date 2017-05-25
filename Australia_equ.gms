@@ -17,11 +17,8 @@
 free variable z;
 equation cost;
 cost..
-    z =e= sum((y,t,r), TotalDiscountedCost(y,t,r));
+    z =e= sum((y,r), TotalDiscountedCost(y,r));
 
-*** START & FINISH ***
-Yearmin = smin(y, YearVal(y));
-Yearmax = smax(y, YearVal(y));
 
 *------------------------------------------------------------------------
 * Total Discounted Costs
@@ -142,19 +139,19 @@ CBa1_TotalNewCapacity(y,t,r)..
 equation CBa4_Constraint_Capacity(YEAR,TIMESLICE,TECHNOLOGY,REGION);
 CBa4_Constraint_Capacity(y,l,t,r)$(TechWithCapacityNeededToMeetPeakTS(r,t) <> 0)..
     RateOfTotalActivity(y,l,t,r) =l=
-        TotalCapacityAnnual(y,t,r) * CapacityFactor(r,l,t,y)*CapacityToActivityUnit(r,t);
+        TotalCapacityAnnual(y,t,r) * CapacityFactor(r,t,y,l)*CapacityToActivityUnit(r,t);
 
 equation CBa3_TotalActivityOfEachTechnology(YEAR,TECHNOLOGY,TIMESLICE,REGION);
 CBa3_TotalActivityOfEachTechnology(y,t,l,r)..
     RateOfTotalActivity(y,l,t,r) =e= sum(m, RateOfActivity(y,l,t,m,r));
 
 * All other technologies have a capacity great enough to at least meet the annual average.
-** MODIFICA: Adesso CapacityFactor dipede da l, dunque è stata aggiunta sommatoria a destra della disequazione e la moltiplicazione per Year split, **
+** MODIFICA: Adesso CapacityFactor dipede da l, dunque Ã¨ stata aggiunta sommatoria a destra della disequazione e la moltiplicazione per Year split, **
 ** Reference: Modeling elements of smart grids - Enhancing the OSeMOSYS - M. Welsch et al. **
 equation CBb1_PlannedMaintenance(YEAR,TECHNOLOGY,REGION);
 CBb1_PlannedMaintenance(y,t,r)..
     sum(l, RateOfTotalActivity(y,l,t,r)*YearSplit(l,y)) =l=
-        sum (l, YearSplit(l,y)*TotalCapacityAnnual(y,t,r)*CapacityFactor(r,l,t,y)* AvailabilityFactor(r,t,y)*CapacityToActivityUnit(r,t));
+        sum (l, YearSplit(l,y)*TotalCapacityAnnual(y,t,r)*CapacityFactor(r,t,y,l)* AvailabilityFactor(r,t,y)*CapacityToActivityUnit(r,t));
 
 
 
@@ -193,11 +190,11 @@ EBa6_RateOfFuelUse3(y,l,f,r)..
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa5_RateOfFuelUse2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
 EBa5_RateOfFuelUse2(y,l,f,t,r)..
-    RateOfUseByTechnology(y,l,t,f,r) =e= sum(m$(InputActivityRatio[y,t,f,m,r] <>0), RateOfUseByTechnologyByMode(y,l,t,m,f,r));
+    RateOfUseByTechnology(y,l,t,f,r) =e= sum(m$(InputActivityRatio[r,t,f,m,y] <>0), RateOfUseByTechnologyByMode(y,l,t,m,f,r));
 
 ** MODIFICA: Aggiunta condizione su InputActivityRatio **
 equation EBa4_RateOfFuelUse1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
-EBa4_RateOfFuelUse1(y,l,f,t,m,r)$(InputActivityRatio[y,t,f,m,r] <>0)..
+EBa4_RateOfFuelUse1(y,l,f,t,m,r)$(InputActivityRatio[r,t,f,m,y] <>0)..
     RateOfUseByTechnologyByMode(y,l,t,m,f,r) =e= RateOfActivity(y,l,t,m,r)*InputActivityRatio(r,t,f,m,y);
 
 ** Production
@@ -213,11 +210,11 @@ EBa3_RateOfFuelProduction3(y,l,f,r)..
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa2_RateOfFuelProduction2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
 EBa2_RateOfFuelProduction2(y,l,f,t,r)..
-    RateOfProductionByTechnology(y,l,t,f,r) =e= sum(m$(OutputActivityRatio[y,t,f,m,r] <>0), RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
+    RateOfProductionByTechnology(y,l,t,f,r) =e= sum(m$(OutputActivityRatio[r,t,f,m,y] <>0), RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
 
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa1_RateOfFuelProduction1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
-EBa1_RateOfFuelProduction1(y,l,f,t,m,r)$(OutputActivityRatio[y,t,f,m,r] <>0)..
+EBa1_RateOfFuelProduction1(y,l,f,t,m,r)$(OutputActivityRatio[r,t,f,m,y] <>0)..
     RateOfProductionByTechnologyByMode(y,l,t,m,f,r) =e= RateOfActivity(y,l,t,m,r)*OutputActivityRatio(r,t,f,m,y);
 
 * For each year
@@ -284,15 +281,15 @@ AAC3_TotalAnnualTechnologyActivityLowerLimit(y,t,r)$(TotalTechnologyAnnualActivi
 
 **Corrected Horizen with Horizon and Useless condition on the equation removed**
 equation TAC1_TotalModelHorizonTechnologyActivity(TECHNOLOGY,REGION);
-TAC1_TotalModelHorizenTechnologyActivity(t,r)..
+TAC1_TotalModelHorizonTechnologyActivity(t,r)..
     TotalTechnologyModelPeriodActivity(t,r) =e= sum(y, TotalTechnologyAnnualActivity(y,t,r));
 
 equation TAC2_TotalModelHorizonTechnologyActivityUpperLimit(YEAR,TECHNOLOGY,REGION);
-TAC2_TotalModelHorizenTechnologyActivityUpperLimit(y,t,r)..
+TAC2_TotalModelHorizonTechnologyActivityUpperLimit(y,t,r)..
     TotalTechnologyModelPeriodActivity(t,r) =l= TotalTechnologyModelPeriodActivityUpperLimit(r,t);
 
-equation TAC3_TotalModelHorizenTechnologyActivityLowerLimit(YEAR,TECHNOLOGY,REGION);
-TAC3_TotalModelHorizenTechnologyActivityLowerLimit(y,t,r)$(TotalTechnologyModelPeriodActivityLowerLimit(r,t) > 0)..
+equation TAC3_TotalModelHorizonTechnologyActivityLowerLimit(YEAR,TECHNOLOGY,REGION);
+TAC3_TotalModelHorizonTechnologyActivityLowerLimit(y,t,r)$(TotalTechnologyModelPeriodActivityLowerLimit(r,t) > 0)..
     TotalTechnologyModelPeriodActivity(t,r) =g= TotalTechnologyModelPeriodActivityLowerLimit(r,t);
 
 
@@ -372,94 +369,114 @@ E7_EmissionsAccounting2(e,r)..
 
 equation S1_RateOfStorageCharge(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 S1_RateOfStorageCharge(s,y,ls,ld,lh,r)..
-    RateOfStorageCharge(s,y,ls,ld,lh,r) =e= sum((t,m,l)$(TechnologyToStorage(r,t,s,m)>0),RateOfActivity(y,l,t,m,r)*TechnologyToStorage(r,t,s,m)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l);
+    RateOfStorageCharge(s,y,ls,ld,lh,r) =e= sum((t,m,l)$(TechnologyToStorage(r,t,s,m)>0),RateOfActivity(y,l,t,m,r)*TechnologyToStorage(r,t,s,m)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l));
 
-equation S2_RateOfStorageDischarge(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMBRACKET,REGION);
+equation S2_RateOfStorageDischarge(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 S2_RateOfStorageDischarge(s,y,ls,ld,lh,r)..
-    RateOfStorageDischarge(s,y,ls,ld,lh,r) =e= sum((t,m,l)$(TechnologyFromStorage(r,t,s,m)>0),RateOfActivity(y,l,t,m,r)*TechnologyFromStorage(r,t,s,m)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l);
+    RateOfStorageDischarge(s,y,ls,ld,lh,r) =e= sum((t,m,l)$(TechnologyFromStorage(r,t,s,m)>0),RateOfActivity(y,l,t,m,r)*TechnologyFromStorage(r,t,s,m)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l));
 
 equation S3_NetChargeWithinYear(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 S3_NetChargeWithinYear(s,y,ls,ld,lh,r)..
-    NetChargeWithinYear(s,y,ls,ld,lh,r) =e= sum(l$(Conversionls(ls,l)>0 and Conversionld(ld,l)>0 and Conversionlh(ld,l)>0),(RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*YearSplit(y,l)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l);
+    NetChargeWithinYear(s,y,ls,ld,lh,r) =e= sum(l$(Conversionls(ls,l)>0 and Conversionld(ld,l)>0 and Conversionlh(lh,l)>0),(RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*YearSplit(l,y)*Conversionls(ls,l)*Conversionld(ld,l)*Conversionlh(lh,l));
 
 equation S4_NetChargeWithinDay(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 S4_NetChargeWithinDay(s,y,ls,ld,lh,r)..
     NetChargeWithinDay(s,y,ls,ld,lh,r) =e= (RateOfStorageCharge(s,y,ls,ld,lh,r)-RateOfStorageDischarge(s,y,ls,ld,lh,r))*DaySplit(y,lh);
 
-equation S5_6_StorageLevelYearStart(STORAGE,YEAR,REGION);
-S5_StorageLevelYearStart(s,y,r)..
-    if (y=Yearmin,
-         StorageLevelYearStart(s,y,r) =e= StorageLevelStart(s,r);
-    else
-         StorageLevelYearStart(s,y,r) =e= StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y-1,ls,ld,lh,r));
-        );
+equation S5_StorageLevelYearStart1(STORAGE,YEAR,REGION);
+S5_StorageLevelYearStart1(s,y,r)..
 
-equation S7_8_StorageLevelYearFinish(STORAGE,YEAR,REGION);
-S7_8_StorageLevelYearFinish(s,y,r)..
-    if (y<Yearmax,
-         StorageLevelYearFinish(s,y,r) =e= StorageLevelYearStart(s,y+1,r);
-    else
-         StorageLevelYearFinish(s,y,r) =e= StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
-        );
+         StorageLevelYearStart(s,y,r)$(YearVal(y)=Yearmin) =e= StorageLevelStart(s,r);
 
-equation S9_10_StorageLevelSeasonStart(STORAGE,YEAR,SEASON,REGION);
-S9_10_StorageLevelSeasonStart(s,y,ls,r)..
-    if(ls=smin(lsls,SeasonVal(lsls)),
-         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelYearStart(s,y,r);
-    else
-         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
-      );
+equation S6_StorageLevelYearStart2(STORAGE,YEAR,REGION);
+S6_StorageLevelYearStart2(s,y,r)..
+         StorageLevelYearStart(s,y,r)$(YearVal(y)<>Yearmin) =e= StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y-1,ls,ld,lh,r));
 
-equation S11_and_S12_StorageLevelDayTypeStart(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S11_and_S12_StorageLevelDayTypeStart(s,y,ls,ld,r)..
-        if( ld=smin(ldld, DayTypeVal(ldld)) ,
-                StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelSeasonStart (s,y,ls,r);
-        else
-                        StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelDayTypeStart(s,y,ls,ld-1,r) + sum( lh, NetChargeWithinDay(s,y,ls,ld-1,lh,r)*DaysInDayTyper(y,ls,ld-1));
-                        );
 
-equation S13_and_S14_and_S15_StorageLevelDayTypeFinish(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S13_and_S14_and_S15_StorageLevelDayTypeFinish(s,y,ls,ld,r)..
-        if( ls=smax(lsls, SeasonVal(lsls)) and ld= smax(ldld, DayTypeVal(ldld)),
-                StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelYearFinish(s,y,r);
-        elseif        ld= smax(ldld, DayTypeVal(ldld)),
-                StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelSeasonStart(s,y,ls+1,r);
-        else
-                StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelDayTypeFinish(s,y,ls,ld+1,r) - sum( lh, NetChargeWithinDay(s,y,ls,ld+1.lh,r)*DaysInDayTyper(yearsplit,ls,ld+1) );
-                );
+equation S7_StorageLevelYearFinish1(STORAGE,YEAR,REGION);
+S7_StorageLevelYearFinish1(s,y,r)..
+
+         StorageLevelYearFinish(s,y,r)$(YearVal(y)<Yearmax) =e= StorageLevelYearStart(s,y+1,r);
+
+equation S8_StorageLevelYearFinish2(STORAGE,YEAR,REGION);
+S8_StorageLevelYearFinish2(s,y,r)..
+         StorageLevelYearFinish(s,y,r)$(YearVal(y)=Yearmax) =e= StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
+
+equation S9_StorageLevelSeasonStart1(STORAGE,YEAR,SEASON,REGION);
+S9_StorageLevelSeasonStart1(s,y,ls,r)..
+
+         StorageLevelSeasonStart(s,y,ls,r)$(ls.val=smin(lsls,SeasonVal(lsls))) =e= StorageLevelYearStart(s,y,r);
+
+equation S10_StorageLevelSeasonStart2(STORAGE,YEAR,SEASON,REGION);
+S10_StorageLevelSeasonStart2(s,y,ls,r)..
+
+         StorageLevelSeasonStart(s,y,ls,r)$(ls.val<>smin(lsls,SeasonVal(lsls))) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
+
+
+equation S11_StorageLevelDayTypeStart1(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S11_StorageLevelDayTypeStart1(s,y,ls,ld,r)..
+                StorageLevelDayTypeStart(s,y,ls,ld,r)$(ld.val=smin(ldld, DayTypeVal(ldld))) =e= StorageLevelSeasonStart (s,y,ls,r);
+
+equation S12_StorageLevelDayTypeStart2(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S12_StorageLevelDayTypeStart2(s,y,ls,ld,r)..
+                StorageLevelDayTypeStart(s,y,ls,ld,r)$(ld.val<>smin(ldld, DayTypeVal(ldld))) =e= StorageLevelSeasonStart (s,y,ls,r);
+
+equation S13_StorageLevelDayTypeFinish1(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S13_StorageLevelDayTypeFinish1(s,y,ls,ld,r)..
+
+                StorageLevelDayTypeFinish(s,y,ls,ld,r)$(ls.val=smax(lsls, SeasonVal(lsls)) and ld.val= smax(ldld, DayTypeVal(ldld))) =e= StorageLevelYearFinish(s,y,r);
+
+equation S14_StorageLevelDayTypeFinish2(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S14_StorageLevelDayTypeFinish2(s,y,ls,ld,r)..
+
+                StorageLevelDayTypeFinish(s,y,ls,ld,r)$(ld.val= smax(ldld, DayTypeVal(ldld))) =e= StorageLevelSeasonStart(s,y,ls+1,r);
+
+equation S15_StorageLevelDayTypeFinish3(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
+S15_StorageLevelDayTypeFinish3(s,y,ls,ld,r)..
+
+                StorageLevelDayTypeFinish(s,y,ls,ld,r)$(ld.val<> smax(ldld, DayTypeVal(ldld))) =e= StorageLevelDayTypeFinish(s,y,ls,ld+1,r) - sum( lh, NetChargeWithinDay(s,y,ls,ld+1,lh,r)*DaysInDayType(y,ls,ld+1) );
+
 
 **---- STORAGE CONSTRAINTS ----**
-equation SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)..
-        ( StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
+*_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint
+equation SC1_Lower(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC1_Lower(s,y,ls,ld,lh,r)..
+        ( StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh.val-lhlh.val>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
 
-equation SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,r)..
-        StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageUpperLimit(s,y,r) =l= 0;
+*_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint
+equation SC1_Upper(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC1_Upper(s,y,ls,ld,lh,r)..
+        ( StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh.val-lhlh.val>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageUpperLimit(s,y,r) =l= 0;
 
-equation SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-        (StorageLevelDayTypeStart(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
+*_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint
+equation SC2_Lower(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC2_Lower(s,y,ls,ld,lh,r)$(ld.val>smin(ldld, DayTypeVal(ldld)))..
+        (StorageLevelDayTypeStart(s,y,ls,ld,r) - sum(lhlh$(lh.val-lhlh.val<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
 
-equation SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-        (StorageLevelDayTypeStart(s,y,ls,ld+1,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageUpperLimit(s,y,r) =l= 0;
+*_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint
+equation SC2_Upper(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC2_Upper(s,y,ls,ld,lh,r)$(ld.val>smin(ldld, DayTypeVal(ldld)))..
+        (StorageLevelDayTypeStart(s,y,ls,ld+1,r) - sum(lhlh$(lh.val-lhlh.val<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageUpperLimit(s,y,r) =l= 0;
 
-equation SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)..
-        (StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
+*SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint
+equation SC3_Lower(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC3_Lower(s,y,ls,ld,lh,r)..
+        (StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh.val-lhlh.val<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
 
-equation SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)..
-        (StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r) =l= 0;
+*SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint
+equation SC3_Upper(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC3_Upper(s,y,ls,ld,lh,r)..
+        (StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh.val-lhlh.val<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r) =l= 0;
 
-equation SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-        (StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageLowerLimit(s,y,r) =g= 0;
+*SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint
+equation SC4_Lower(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC4_Lower(s,y,ls,ld,lh,r)$(ld.val>smin(ldld, DayTypeVal(ldld)))..
+        (StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh.val-lhlh.val>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageLowerLimit(s,y,r) =g= 0;
 
-equation SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
-SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-        (StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r) =l= 0;
+*SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint
+equation SC4_Upper(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC4_Upper(s,y,ls,ld,lh,r)$(ld.val>smin(ldld, DayTypeVal(ldld)))..
+        (StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh.val-lhlh.val>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r) =l= 0;
 
 equation SC5_MaxChargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC5_MaxChargeConstraint(s,y,ls,ld,lh,r)..
@@ -480,7 +497,7 @@ SI2_StorageLowerLimit(s,y,r)..
 
 equation SI3_TotalNewStorage(STORAGE,YEAR,REGION);
 SI3_TotalNewStorage(s,y,r)..
-        AccumulatedNewStorageCapacity(s,y,r) =e= sum(yy$(y-yy<OperationalLifeStorage(s,r) and y-yy>=0), NewStorageCapacity(s,yy,r));
+        AccumulatedNewStorageCapacity(s,y,r) =e= sum(yy$(y.val-yy.val<OperationalLifeStorage(s,r) and y.val-yy.val>=0), NewStorageCapacity(s,yy,r));
 
 equation SI4_UndiscountedCapitalInvestmentStorage(STORAGE,YEAR,REGION);
 SI4_UndiscountedCapitalInvestmentStorage(s,y,r)..
@@ -488,25 +505,30 @@ SI4_UndiscountedCapitalInvestmentStorage(s,y,r)..
 
 equation SI5_DiscountingCapitalInvestmentStorage(STORAGE,YEAR,REGION);
 SI5_DiscountingCapitalInvestmentStorage(s,y,r)..
-DiscountedCapitalInvestmentStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r)/((1+DiscountRateStorage(s,r))^(y-Yearmin));
+        DiscountedCapitalInvestmentStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r)/((1+DiscountRateStorage(s,r))**(y.val-Yearmin));
 
-equation SI6_7_8_SalvageValueStorageAtEndOfPeriod(STORAGE, YEAR, REGION);
-SI6_SalvageValueStorageAtEndOfPeriod(s,y,r)..
-         if ( ( (y+OperationalLifeStorage(r,s) -1) <= smax( yy, YearVal(yy) ) ),
-                 SalvageValueStorage(s,y,r) =e= 0;
-         elseif ( (y+OperationalLifeStorage(r,s) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(r,s)=0 ),
-                 SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1- smax(yy, YearVal(yy)) -y+1 ) / OperationalLifeStorage(r,s);
-         else ( (y+OperationalLifeStorage(r,s) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(r,s)>0 ),
-               SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(r,s)) ^(smax(yy, YearVal(yy))-y+1) -1 )/( ( 1+DiscountRateStorage(r,s) )^( OperationalLifeStorage(r,s) )-1));
-         );
+
+equation SI6_SalvageValueStorageAtEndOfPeriod1 (STORAGE, YEAR, REGION);
+SI6_SalvageValueStorageAtEndOfPeriod1(s,y,r)..
+        SalvageValueStorage(s,y,r) $ ( (y.val+OperationalLifeStorage(s,r) -1) <= smax( yy, YearVal(yy)) ) =e= 0;
+
+equation SI7_SalvageValueStorageAtEndOfPeriod2 (STORAGE, YEAR, REGION);
+SI7_SalvageValueStorageAtEndOfPeriod2(s,y,r)..
+        SalvageValueStorage(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)=0 )=e= CapitalInvestmentStorage(s,y,r) * ( 1- smax(yy, YearVal(yy)) -y.val+1 ) / OperationalLifeStorage(s,r);
+
+equation SI8_SalvageValueStorageAtEndOfPeriod3 (STORAGE, YEAR, REGION);
+SI8_SalvageValueStorageAtEndOfPeriod3(s,y,r)..
+        SalvageValueStorage(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)>0 ) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(s,r)) ** (smax(yy, YearVal(yy))-y.val+1) -1 )/( ( 1+DiscountRateStorage(s,r) )**( OperationalLifeStorage(s,r) )-1));
+
+
 
 equation SI9_SalvageValueStorageDiscountedToStartYear (STORAGE,YEAR,REGION);
 SI9_SalvageValueStorageDiscountedToStartYear(s,y,r)..
-                DiscountedSalvageValueStorage(s,y,r) =e= SalvageValueStorage(s,y,r)/ ((1+ DiscountRateStorage(r,s))^ (smax(yy,YearVal(yy)) -smin(yy,YearVal(yy)) +1));
+                DiscountedSalvageValueStorage(s,y,r) =e= SalvageValueStorage(s,y,r)/ ((1+ DiscountRateStorage(s,r))** (smax(yy,YearVal(yy)) -smin(yy,YearVal(yy)) +1));
 
 equation SI10_TotalDiscountedCostByStorage(STORAGE,YEAR,REGION);
 SI10_TotalDiscountedCostByStorage(s,y,r)..
-                TotalDiscountedStorageCost(s,y,r) =e= DiscountedCapitalValueStorage(s,y,r) - DiscountedSalvageValueStorage(s,y,r);
+                TotalDiscountedStorageCost(s,y,r) =e= DiscountedCapitalInvestmentStorage(s,y,r) - DiscountedSalvageValueStorage(s,y,r);
 *------------------------------------------------------------------------
 * Other accounting equations
 *------------------------------------------------------------------------
@@ -518,6 +540,6 @@ RE5_FuelUseByTechnologyAnnual(y,t,f,r)..
 equation Acc2_FuelUseByTechnology(YEAR,TIMESLICE,TECHNOLOGY,FUEL,REGION);
 Acc2_FuelUseByTechnology(y,l,t,f,r).. RateOfUseByTechnology(y,l,t,f,r) * YearSplit(l,y) =e= UseByTechnology(y,l,t,f,r);
 
-** MODIFICA: Il TotalDiscountedCost non dipende più dalla tec, è stato sommato da un'altra parte per tener conto dello storage***
+** MODIFICA: Il TotalDiscountedCost non dipende piÃ¹ dalla tec, Ã¨ stato sommato da un'altra parte per tener conto dello storage***
 equation Acc3_ModelPeriodCostByRegion(REGION);
 Acc3_ModelPeriodCostByRegion(r).. ModelPeriodCostByRegion(r) =e= sum((y), TotalDiscountedCost(y,r));
