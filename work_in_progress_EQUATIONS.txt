@@ -31,27 +31,27 @@ S4_NetChargeWithinDay(s,y,ls,ld,lh,r)..
 equation S5_6_StorageLevelYearStart(STORAGE,YEAR,REGION);
 S5_StorageLevelYearStart(s,y,r)..
     if (y=Yearmin,
-         StorageLevelYearStart(s,y,r)=StorageLevelStart(s,r);
+         StorageLevelYearStart(s,y,r)=e=StorageLevelStart(s,r);
     else
-         StorageLevelYearStart(s,y,r)=StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinDay(s,y-1,ls,ld,lh,r));
+         StorageLevelYearStart(s,y,r)=e=StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinDay(s,y-1,ls,ld,lh,r));
         );
 	
 **STORAGE LEVEL AT YEAR FINISH**
 equation S7_8_StorageLevelYearFinish(STORAGE,YEAR,REGION);
 S5_StorageLevelYearFinish(s,y,r)..
     if (y<Yearmax,
-         StorageLevelYearFinish(s,y,r)=StorageLevelYearStart(s,y+1,r);
+         StorageLevelYearFinish(s,y,r) =e= StorageLevelYearStart(s,y+1,r);
     else
-         StorageLevelYearFinish(s,y,r)=StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
+         StorageLevelYearFinish(s,y,r) =e= StorageLevelYearStart(s,y,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y,ls,ld,lh,r));
         );
 
 ** STORAGE LEVEL SEASON START**
 equation S9_10_StorageLevelSeasonStart(STORAGE,YEAR,SEASON,REGION);
 S9_10_StorageLevelSeasonStart(s,y,ls,r)..
     if(ls=smin(lsls,SeasonVal(lsls)),
-         StorageLevelSeasonStart(s,y,ls,r)=StorageLevelYearStart(s,y,r);
+         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelYearStart(s,y,r);
     else
-         StorageLevelSeasonStart(s,y,ls,r)=StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
+         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
       );
 
 ******************************************* MAY24: tommy il bello, tommyTomac
@@ -66,7 +66,7 @@ S11_and_S12_StorageLevelDayTypeStart..
 equation S13_and_S14_and_S15_StorageLevelDayTypeFinish(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
 S13_and_S14_and_S15_StorageLevelDayTypeFinish(s,y,ls,ld,r)..
 	if( ls=smax(lsls, SeasonVal(lsls)) and ld= smax(ldld, DayTypeVal(ldld)),
-		StorageLevelDayTypeFinish(s,y,ls,ld,r)=e= StorageLevelYearFinish(s,y,r);
+		StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelYearFinish(s,y,r);
 	elseif	ld= smax(ldld, DayTypeVal(ldld)),
 		StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelSeasonStart(s,y,ls+1,r);
 	else 
@@ -76,44 +76,44 @@ S13_and_S14_and_S15_StorageLevelDayTypeFinish(s,y,ls,ld,r)..
 **----CONSTRAINTS
 equation SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC1_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)..
-	( StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) >=0;
+	( StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
 	
 equation SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC1_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,r)..
-	StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageUpperLimit(s,y,r)<=0;
+	StorageLevelDayTypeStart(s,y,ls,ld,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageUpperLimit(s,y,r) =l= 0;
 
  *************************************** MAy 25 Tommy il bello *************************************** ***************************************
 equation SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC2_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-	(StorageLevelDayTypeStart(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageLowerLimit(s,y,r)>=0;
+	(StorageLevelDayTypeStart(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
 	
 equation SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC2_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInFirstWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-	(StorageLevelDayTypeStart(s,y,ls,ld+1,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageUpperLimit(s,y,r)<=0;
+	(StorageLevelDayTypeStart(s,y,ls,ld+1,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld-1,lhlh,r))) - StorageUpperLimit(s,y,r) =l= 0;
 	
 equation SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)..
-	(StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r)>=0;
+	(StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) - StorageLowerLimit(s,y,r) =g= 0;
 
 equation SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)..
-	(StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r)<=0;
+	(StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r) =l=0;
 
 equation SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-	(StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageLowerLimit(s,y,r)>=0;
+	(StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageLowerLimit(s,y,r) =g= 0;
 
 equation SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
-	(StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r)<=0;
+	(StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r) =l= 0;
 	
 equation SC5_MaxChargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC5_MaxChargeConstraint(s,y,ls,ld,lh,r)..
-	RateOfStorageCharge(s,y,ls,ld,lh,r)>=StorageMaxChargeRate(s,r);
+	RateOfStorageCharge(s,y,ls,ld,lh,r) =g= StorageMaxChargeRate(s,r);
 
 equation SC6_MaxDischargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC6_MaxDischargeConstraint(s,y,ls,ld,lh,r)..
-	RateOfStorageDischarge(s,y,ls,ld,lh,r)<=StorageMaxDischargeRate(s,r);
+	RateOfStorageDischarge(s,y,ls,ld,lh,r) =l= StorageMaxDischargeRate(s,r);
 	
 ***************************************** ************************************ ***************** ********************************
 +++++++ STORAGE INVESTMENTS ++++++++
@@ -195,7 +195,7 @@ EBa4_RateOfFuelUse1(y,l,f,t,m,r)$(InputActivityRatio[y,t,f,m,r] <>0)..
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa2_RateOfFuelProduction2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
 EBa2_RateOfFuelProduction2(y,l,f,t,r)..
-    RateOfProductionByTechnology(y,l,t,f,r)=e= sum(m$(OutputActivityRatio[y,t,f,m,r] <>0), RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
+    RateOfProductionByTechnology(y,l,t,f,r) =e= sum(m$(OutputActivityRatio[y,t,f,m,r] <>0), RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
 
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa1_RateOfFuelProduction1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
