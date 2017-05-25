@@ -56,7 +56,7 @@ S9_10_StorageLevelSeasonStart(s,y,ls,r)..
 
 ******************************************* MAY24: tommy il bello, tommyTomac
 equation S11_and_S12_StorageLevelDayTypeStart(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S11_and_S12_StorageLevelDayTypeStart..
+S11_and_S12_StorageLevelDayTypeStart(s,y,ls,ld,r)..
 	if( ld=smin(ldld, DayTypeVal(ldld)) ,
 		StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelSeasonStart (s,y,ls,r);
 	else 
