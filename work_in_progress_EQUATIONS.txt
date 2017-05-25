@@ -98,6 +98,22 @@ SC3_LowerLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(
 equation SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC3_UpperLimit_EndOfDailyTimeBracketOfLastInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)..
 	(StorageLevelDayTypeFinish(s,y,ls,ld,r) - sum(lhlh$(lh-lhlh<0),NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r)<=0;
+
+equation SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC4_LowerLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
+	(StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageLowerLimit(s,y,r)>=0;
+
+equation SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC4_UpperLimit_BeginningOfDailyTimeBracketOfFirstInstanceOfDayTypeInLastWeekConstraint(s,y,ls,ld,lh,r)$(ld>smin(ldld, DayTypeVal(ldld)))..
+	(StorageLevelDayTypeFinish(s,y,ls,ld-1,r) + sum(lhlh$(lh-lhlh>0), NetChargeWithinDay(s,y,ls,ld,lhlh,r))) -StorageUpperLimit(s,y,r)<=0;
+	
+equation SC5_MaxChargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC5_MaxChargeConstraint(s,y,ls,ld,lh,r)..
+	RateOfStorageCharge(s,y,ls,ld,lh,r)>=StorageMaxChargeRate(s,r);
+
+equation SC6_MaxDischargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
+SC6_MaxDischargeConstraint(s,y,ls,ld,lh,r)..
+	RateOfStorageDischarge(s,y,ls,ld,lh,r)<=StorageMaxDischargeRate(s,r);
 	
 ***************************************** ************************************ ***************** ********************************
 
