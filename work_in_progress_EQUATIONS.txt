@@ -212,6 +212,20 @@ Acc3_ModelPeriodCostByRegion(r).. ModelPeriodCostByRegion(r) =e= sum((y), TotalD
 Yearmin = smin(y, YearVal(y));
 Yearmax = smax(y, YearVal(y));
 
+**** May 25 Tommy il bello ****
+*** MODIFICHE A TOTAL DISCONTED COST***
+*** DISTINZIONE TRA TOTAL_DISCOUNTED_COST_BY_TECHNOLOGY E TOTAL_DISCOUNTED_COST (takes into account also the cost of storage)***
+equation TDC1_TotalDiscountedCostByTechnology(YEAR,TECHNOLOGY,REGION);
+TDC1_TotalDiscountedCostByTechnology(y,t,r)..
+    TotalDiscountedCostByTechnology(y,t,r) =e= DiscountedOperatingCost(y,t,r)
+                                   + DiscountedCapitalInvestment(y,t,r)
+                                   + DiscountedTechnologyEmissionsPenalty(y,t,r)
+                                   - DiscountedSalvageValue(y,t,r);
+
+equation TDC2_TotalDiscountedCost(YEAR,REGION);
+TDC2_TotalDiscountedCost(y,r)..
+	TotalDiscountedCost(y,r) =e= sum(t,TotalDiscountedCostByTechnology(y,t,r))+sum(s,TotalDiscountedStorageCost(s,y,r));
+
 
 
 	
