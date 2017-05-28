@@ -1,8 +1,8 @@
-* OSEMOSYS_EQU.GMS - model equations
+* Australia_EQU.GMS - model equations
 *
 * OSEMOSYS 2011.07.07 medley with 2012.01.01
 * - 2017/05 Restyling by The Prophets
-* - 2012/08 Conversion to GAMS by Tommy il bello, TommyTomac, Nobel e Winters
+* - 2012/08 Conversion to GAMS by Ragamuffin, TommyTomac, Nobel e Winters
 *
 * OSEMOSYS 2011.07.07
 * Open Source energy Modeling SYStem
@@ -56,6 +56,10 @@ equation Acc3_AverageAnnualRateOfActivity(YEAR,TECHNOLOGY,MODE_OF_OPERATION,REGI
 Acc3_AverageAnnualRateOfActivity(y,t,m,r)..
     TotalAnnualTechnologyActivityByMode(y,t,m,r) =e= sum(l, RateOfActivity(y,l,t,m,r)*YearSplit(l,y));
 
+** MODIFICA: Il TotalDiscountedCost non dipende più dalla tec, è stato sommato da un'altra parte per tener conto dello storage***
+equation Acc3_ModelPeriodCostByRegion(REGION);
+Acc3_ModelPeriodCostByRegion(r).. ModelPeriodCostByRegion(r) =e= sum((y), TotalDiscountedCost(y,r));
+
 
 *------------------------------------------------------------------------
 * Capital Investments
@@ -104,19 +108,18 @@ E1_AnnualEmissionProductionByMode(y,t,e,m,r)..
 
 equation SV4_SalvageValueDiscToStartYr(YEAR,TECHNOLOGY,REGION);
 SV4_SalvageValueDiscToStartYr(y,t,r)..
-    DiscountedSalvageValue(y,t,r) =e= SalvageValue(y,t,r)/((1 + DiscountRate(r,t))**(1 + smax(yy, YearVal(yy))  -  smin(yy, YearVal(yy))));
+    DiscountedSalvageValue(y,t,r) =e= SalvageValue(y,t,r)/((1 + DiscountRate(r,t))**(1 + Yearmax-Yearmin));
 
 equation SV1_SalvageValueAtEndOfPeriod1(YEAR,TECHNOLOGY,REGION);
-SV1_SalvageValueAtEndOfPeriod1(y,t,r)$((YearVal(y)  +  OperationalLife(r,t) - 1 > smax(yy, YearVal(yy))) and (DiscountRate(r,t) > 0))..
-SalvageValue(y,t,r) =e= CapitalCost(r,t,y)*NewCapacity(y,t,r)*(1 - (((1 + DiscountRate(r,t))**(smax(yy, YearVal(yy))  -  YearVal(y) + 1)  - 1)
-/((1 + DiscountRate(r,t))**OperationalLife(r,t) - 1)));
+SV1_SalvageValueAtEndOfPeriod1(y,t,r)$((YearVal(y)  +  OperationalLife(r,t) - 1 > Yearmax) and (DiscountRate(r,t) > 0))..
+SalvageValue(y,t,r) =e= CapitalCost(r,t,y)*NewCapacity(y,t,r)*(1 - (((1 + DiscountRate(r,t))**(Yearmax -  YearVal(y) + 1)  - 1)/((1 + DiscountRate(r,t))**OperationalLife(r,t) - 1)));
 
 equation SV2_SalvageValueAtEndOfPeriod2(YEAR,TECHNOLOGY,REGION);
-SV2_SalvageValueAtEndOfPeriod2(y,t,r)$((YearVal(y)  +  OperationalLife(r,t) - 1 > smax(yy, YearVal(yy))) and (DiscountRate(r,t) = 0))..
-SalvageValue(y,t,r) =e= CapitalCost(r,t,y)*NewCapacity(y,t,r)*(1 - smax(yy, YearVal(yy)) -  YearVal(y) + 1)/OperationalLife(r,t);
+SV2_SalvageValueAtEndOfPeriod2(y,t,r)$((YearVal(y)  +  OperationalLife(r,t) - 1 > Yearmax) and (DiscountRate(r,t) = 0))..
+SalvageValue(y,t,r) =e= CapitalCost(r,t,y)*NewCapacity(y,t,r)*(1 - (Yearmax -  YearVal(y) + 1)/OperationalLife(r,t));
 
 equation SV3_SalvageValueAtEndOfPeriod3(YEAR,TECHNOLOGY,REGION);
-SV3_SalvageValueAtEndOfPeriod3(y,t,r)$(YearVal(y)  +  OperationalLife(r,t) - 1 <= smax(yy, YearVal(yy)))..
+SV3_SalvageValueAtEndOfPeriod3(y,t,r)$(YearVal(y)  +  OperationalLife(r,t) - 1 <= Yearmax)..
 SalvageValue(y,t,r) =e= 0;
 
 
@@ -124,25 +127,24 @@ SalvageValue(y,t,r) =e= 0;
 *------------------------------------------------------------------------
 * Capacity Adequacy
 *------------------------------------------------------------------------
+equation CBa1_TotalNewCapacity(YEAR,TECHNOLOGY,REGION);
+CBa1_TotalNewCapacity(y,t,r)..
+    AccumulatedNewCapacity(y,t,r) =e=
+        sum(yy$((YearVal(y) - YearVal(yy) < OperationalLife(r,t)) and (YearVal(y) - YearVal(yy) >= 0)), NewCapacity(yy,t,r));
 
 equation CBa2_TotalAnnualCapacity(YEAR,TECHNOLOGY,REGION);
 CBa2_TotalAnnualCapacity(y,t,r)..
     TotalCapacityAnnual(y,t,r) =e= AccumulatedNewCapacity(y,t,r) +  ResidualCapacity(r,t,y);
 
-equation CBa1_TotalNewCapacity(YEAR,TECHNOLOGY,REGION);
-CBa1_TotalNewCapacity(y,t,r)..
-    AccumulatedNewCapacity(y,t,r) =e=
-        sum(yy$((YearVal(y) - YearVal(yy) < OperationalLife(r,t)) and (YearVal(y) - YearVal(yy) >= 0)), NewCapacity(yy,t,r));
+equation CBa3_TotalActivityOfEachTechnology(YEAR,TECHNOLOGY,TIMESLICE,REGION);
+CBa3_TotalActivityOfEachTechnology(y,t,l,r)..
+    RateOfTotalActivity(y,l,t,r) =e= sum(m, RateOfActivity(y,l,t,m,r));
 
 ** Modifica: Adesso Capacity factor dipende da Timeslice l *****
 equation CBa4_Constraint_Capacity(YEAR,TIMESLICE,TECHNOLOGY,REGION);
 CBa4_Constraint_Capacity(y,l,t,r)$(TechWithCapacityNeededToMeetPeakTS(r,t) <> 0)..
     RateOfTotalActivity(y,l,t,r) =l=
         TotalCapacityAnnual(y,t,r) * CapacityFactor(r,t,y,l)*CapacityToActivityUnit(r,t);
-
-equation CBa3_TotalActivityOfEachTechnology(YEAR,TECHNOLOGY,TIMESLICE,REGION);
-CBa3_TotalActivityOfEachTechnology(y,t,l,r)..
-    RateOfTotalActivity(y,l,t,r) =e= sum(m, RateOfActivity(y,l,t,m,r));
 
 * All other technologies have a capacity great enough to at least meet the annual average.
 ** MODIFICA: Adesso CapacityFactor dipede da l, dunque è stata aggiunta sommatoria a destra della disequazione e la moltiplicazione per Year split, **
@@ -162,6 +164,7 @@ CBb1_PlannedMaintenance(y,t,r)..
 
 ** Balance
 
+*°°
 equation EBa10_EnergyBalanceEachTS4(YEAR,TIMESLICE,FUEL,REGION);
 EBa10_EnergyBalanceEachTS4(y,l,f,r)..
     Production(y,l,f,r) =g= Demand(y,l,f,r) + Use(y,l,f,r);
@@ -190,11 +193,13 @@ EBa6_RateOfFuelUse3(y,l,f,r)..
 equation EBa5_RateOfFuelUse2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
 EBa5_RateOfFuelUse2(y,l,f,t,r)..
     RateOfUseByTechnology(y,l,t,f,r) =e= sum(m$(InputActivityRatio[r,t,f,m,y] <>0), RateOfUseByTechnologyByMode(y,l,t,m,f,r));
+*su sum $(InputActivityRatio[r,t,f,m,y] <>0)
 
 ** MODIFICA: Aggiunta condizione su InputActivityRatio **
 equation EBa4_RateOfFuelUse1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
 EBa4_RateOfFuelUse1(y,l,f,t,m,r)$(InputActivityRatio[r,t,f,m,y] <>0)..
     RateOfUseByTechnologyByMode(y,l,t,m,f,r) =e= RateOfActivity(y,l,t,m,r)*InputActivityRatio(r,t,f,m,y);
+*$(InputActivityRatio[r,t,f,m,y] <>0)
 
 ** Production
 
@@ -210,12 +215,13 @@ EBa3_RateOfFuelProduction3(y,l,f,r)..
 equation EBa2_RateOfFuelProduction2(YEAR,TIMESLICE,FUEL,TECHNOLOGY,REGION);
 EBa2_RateOfFuelProduction2(y,l,f,t,r)..
     RateOfProductionByTechnology(y,l,t,f,r) =e= sum(m$(OutputActivityRatio[r,t,f,m,y] <>0), RateOfProductionByTechnologyByMode(y,l,t,m,f,r));
+*su sum $(OutputActivityRatio[r,t,f,m,y] <>0)
 
 ** MODIFICA: Aggiunta condizione su OutputActivityRatio **
 equation EBa1_RateOfFuelProduction1(YEAR,TIMESLICE,FUEL,TECHNOLOGY,MODE_OF_OPERATION,REGION);
 EBa1_RateOfFuelProduction1(y,l,f,t,m,r)$(OutputActivityRatio[r,t,f,m,y] <>0)..
     RateOfProductionByTechnologyByMode(y,l,t,m,f,r) =e= RateOfActivity(y,l,t,m,r)*OutputActivityRatio(r,t,f,m,y);
-
+*su tutto $(OutputActivityRatio[r,t,f,m,y] <>0)
 * For each year
 
 ** Balance
@@ -388,7 +394,7 @@ S5_StorageLevelYearStart1(s,y,r)$(YearVal(y)=Yearmin)..
          StorageLevelYearStart(s,y,r) =e= StorageLevelStart(s,r);
 
 equation S6_StorageLevelYearStart2(STORAGE,YEAR,REGION);
-S6_StorageLevelYearStart2(s,y,r)$(YearVal(y)<>Yearmin)..
+S6_StorageLevelYearStart2(s,y,r)$(YearVal(y)>=Yearmin+1)..
          StorageLevelYearStart(s,y,r) =e= StorageLevelYearStart(s,y-1,r)+sum((ls,ld,lh),NetChargeWithinYear(s,y-1,ls,ld,lh,r));
 
 
@@ -409,7 +415,7 @@ S9_StorageLevelSeasonStart1(s,y,ls,r)$(ls.val=smin(lsls,SeasonVal(lsls)))..
 equation S10_StorageLevelSeasonStart2(STORAGE,YEAR,SEASON,REGION);
 S10_StorageLevelSeasonStart2(s,y,ls,r)$(ls.val<>smin(lsls,SeasonVal(lsls)))..
 
-         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinDay(s,y,ls-1,ld,lh,r));
+         StorageLevelSeasonStart(s,y,ls,r) =e= StorageLevelSeasonStart(s,y,ls-1,r)+sum((ld,lh),NetChargeWithinYear(s,y,ls-1,ld,lh,r));
 
 
 equation S11_StorageLevelDayTypeStart1(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
@@ -418,7 +424,7 @@ S11_StorageLevelDayTypeStart1(s,y,ls,ld,r)$(ld.val=smin(ldld, DayTypeVal(ldld)))
 
 equation S12_StorageLevelDayTypeStart2(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
 S12_StorageLevelDayTypeStart2(s,y,ls,ld,r)$(ld.val<>smin(ldld, DayTypeVal(ldld)))..
-                StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelSeasonStart (s,y,ls,r);
+                StorageLevelDayTypeStart(s,y,ls,ld,r) =e= StorageLevelDayTypeStart (s,y,ls,ld-1,r)+sum(lh,NetChargeWithinDay(s,y,ls,ld-1,lh,r)*DaysInDayType(y,ls,ld-1));
 
 equation S13_StorageLevelDayTypeFinish1(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
 S13_StorageLevelDayTypeFinish1(s,y,ls,ld,r)$(ls.val=smax(lsls, SeasonVal(lsls)) and ld.val= smax(ldld, DayTypeVal(ldld)))..
@@ -426,12 +432,12 @@ S13_StorageLevelDayTypeFinish1(s,y,ls,ld,r)$(ls.val=smax(lsls, SeasonVal(lsls)) 
                 StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelYearFinish(s,y,r);
 
 equation S14_StorageLevelDayTypeFinish2(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S14_StorageLevelDayTypeFinish2(s,y,ls,ld,r)$(ld.val= smax(ldld, DayTypeVal(ldld)))..
+S14_StorageLevelDayTypeFinish2(s,y,ls,ld,r)$(ls.val<>smax(lsls, SeasonVal(lsls)) and ld.val= smax(ldld, DayTypeVal(ldld)))..
 
                 StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelSeasonStart(s,y,ls+1,r);
 
 equation S15_StorageLevelDayTypeFinish3(STORAGE,YEAR,SEASON,DAYTYPE,REGION);
-S15_StorageLevelDayTypeFinish3(s,y,ls,ld,r)$(ld.val<> smax(ldld, DayTypeVal(ldld)))..
+S15_StorageLevelDayTypeFinish3(s,y,ls,ld,r)$(ls.val<>smax(lsls, SeasonVal(lsls)) and ld.val<> smax(ldld, DayTypeVal(ldld)))..
 
                 StorageLevelDayTypeFinish(s,y,ls,ld,r) =e= StorageLevelDayTypeFinish(s,y,ls,ld+1,r) - sum( lh, NetChargeWithinDay(s,y,ls,ld+1,lh,r)*DaysInDayType(y,ls,ld+1) );
 
@@ -479,7 +485,7 @@ SC4_Upper(s,y,ls,ld,lh,r)$(ld.val>smin(ldld, DayTypeVal(ldld)))..
 
 equation SC5_MaxChargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC5_MaxChargeConstraint(s,y,ls,ld,lh,r)..
-        RateOfStorageCharge(s,y,ls,ld,lh,r) =g= StorageMaxChargeRate(s,r);
+        RateOfStorageCharge(s,y,ls,ld,lh,r) =l= StorageMaxChargeRate(s,r);
 
 equation SC6_MaxDischargeConstraint(STORAGE,YEAR,SEASON,DAYTYPE,DAILYTIMEBRACKET,REGION);
 SC6_MaxDischargeConstraint(s,y,ls,ld,lh,r)..
@@ -508,22 +514,22 @@ SI5_DiscountingCapitalInvestmentStorage(s,y,r)..
 
 
 equation SI6_SalvageValueStorageAtEndOfPeriod1 (STORAGE, YEAR, REGION);
-SI6_SalvageValueStorageAtEndOfPeriod1(s,y,r)$( (y.val+OperationalLifeStorage(s,r) -1) <= smax( yy, YearVal(yy)) )..
+SI6_SalvageValueStorageAtEndOfPeriod1(s,y,r)$( (y.val+OperationalLifeStorage(s,r) -1) <= Yearmax )..
         SalvageValueStorage(s,y,r) =e= 0;
 
 equation SI7_SalvageValueStorageAtEndOfPeriod2 (STORAGE, YEAR, REGION);
-SI7_SalvageValueStorageAtEndOfPeriod2(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)=0 )..
-        SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1- smax(yy, YearVal(yy)) -y.val+1 ) / OperationalLifeStorage(s,r);
+SI7_SalvageValueStorageAtEndOfPeriod2(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > Yearmax and DiscountRateStorage(s,r)=0 )..
+        SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1- Yearmax -y.val+1 ) / OperationalLifeStorage(s,r);
 
 equation SI8_SalvageValueStorageAtEndOfPeriod3 (STORAGE, YEAR, REGION);
-SI8_SalvageValueStorageAtEndOfPeriod3(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > smax( yy, YearVal(yy)) and DiscountRateStorage(s,r)>0 )..
-        SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(s,r)) ** (smax(yy, YearVal(yy))-y.val+1) -1 )/( ( 1+DiscountRateStorage(s,r) )**( OperationalLifeStorage(s,r) )-1));
+SI8_SalvageValueStorageAtEndOfPeriod3(s,y,r)$((y.val+OperationalLifeStorage(s,r) -1) > Yearmax and DiscountRateStorage(s,r)>0 )..
+        SalvageValueStorage(s,y,r) =e= CapitalInvestmentStorage(s,y,r) * ( 1-  ( (1+DiscountRateStorage(s,r)) ** (Yearmax-y.val+1) -1 )/( ( 1+DiscountRateStorage(s,r) )**( OperationalLifeStorage(s,r) )-1));
 
 
 
 equation SI9_SalvageValueStorageDiscountedToStartYear (STORAGE,YEAR,REGION);
 SI9_SalvageValueStorageDiscountedToStartYear(s,y,r)..
-                DiscountedSalvageValueStorage(s,y,r) =e= SalvageValueStorage(s,y,r)/ ((1+ DiscountRateStorage(s,r))** (smax(yy,YearVal(yy)) -smin(yy,YearVal(yy)) +1));
+                DiscountedSalvageValueStorage(s,y,r) =e= SalvageValueStorage(s,y,r)/ ((1+ DiscountRateStorage(s,r))** (Yearmax -Yearmin +1));
 
 equation SI10_TotalDiscountedCostByStorage(STORAGE,YEAR,REGION);
 SI10_TotalDiscountedCostByStorage(s,y,r)..
@@ -539,6 +545,4 @@ RE5_FuelUseByTechnologyAnnual(y,t,f,r)..
 equation Acc2_FuelUseByTechnology(YEAR,TIMESLICE,TECHNOLOGY,FUEL,REGION);
 Acc2_FuelUseByTechnology(y,l,t,f,r).. RateOfUseByTechnology(y,l,t,f,r) * YearSplit(l,y) =e= UseByTechnology(y,l,t,f,r);
 
-** MODIFICA: Il TotalDiscountedCost non dipende più dalla tec, è stato sommato da un'altra parte per tener conto dello storage***
-equation Acc3_ModelPeriodCostByRegion(REGION);
-Acc3_ModelPeriodCostByRegion(r).. ModelPeriodCostByRegion(r) =e= sum((y), TotalDiscountedCost(y,r));
+
