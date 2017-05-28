@@ -730,6 +730,8 @@ parameter InputActivityRatio /
   AUSTRALIA.E31.HYD.1.2033  3.125
   AUSTRALIA.E31.HYD.1.2034  3.125
   AUSTRALIA.E31.HYD.1.2035  3.125
+  
+  *solo modalità charge perchè in modalità discharge non c'è nulla che entra
   AUSTRALIA.E51.ELC.2. 2015  1.3889
   AUSTRALIA.E51.ELC.2. 2016  1.3889
   AUSTRALIA.E51.ELC.2. 2017  1.3889
@@ -751,6 +753,8 @@ parameter InputActivityRatio /
   AUSTRALIA.E51.ELC.2. 2033  1.3889
   AUSTRALIA.E51.ELC.2. 2034  1.3889
   AUSTRALIA.E51.ELC.2. 2035  1.3889
+  
+  
   AUSTRALIA.E70.DSL.1.2015  2.8
   AUSTRALIA.E70.DSL.1.2016  2.8
   AUSTRALIA.E70.DSL.1.2017  2.8
@@ -1073,6 +1077,8 @@ parameter OutputActivityRatio /
   AUSTRALIA.E31.ELC.1.2034  1
   AUSTRALIA.E31.ELC.1.2035  1
   AUSTRALIA.E51.ELC.1.2015  1
+  
+  *no modalità charge perchè in charge non c'è niente che esce
   AUSTRALIA.E51.ELC.1.2016  1
   AUSTRALIA.E51.ELC.1.2017  1
   AUSTRALIA.E51.ELC.1.2018  1
